@@ -173,7 +173,7 @@ Builds a NetworkX graph from HOT roads shapefiles using `geopandas + momepy`. Ca
 
 ---
 
-## Demo Walkthrough (3 min)
+## Demo Walkthrough
 
 1. **Landing** → Visit `http://localhost:5173`. NGO directory loads Haiti NGOs from MongoDB (seeded from HDX or demo data). Switch country to DRC.
 
