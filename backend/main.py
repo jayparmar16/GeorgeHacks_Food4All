@@ -17,6 +17,7 @@ from routes.ticket_routes import router as ticket_router
 from routes.market_pulse_routes import router as pulse_router
 from routes.routing_routes import router as routing_router
 from routes.activation_routes import router as activation_router
+from services.auth import mock_auth_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -105,6 +106,7 @@ app.include_router(ticket_router, prefix="/api")
 app.include_router(pulse_router, prefix="/api")
 app.include_router(routing_router, prefix="/api")
 app.include_router(activation_router, prefix="/api")
+app.include_router(mock_auth_router, prefix="/api")
 
 
 @app.get("/")

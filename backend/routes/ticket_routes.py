@@ -49,9 +49,12 @@ def _build_ration(country: str, household_size: int) -> list:
 
 
 @router.post("/")
-async def create_ticket(req: TicketCreate, current_user=Depends(require_ngo), db=Depends(get_db)):
+async def create_ticket(req: TicketCreate, db=Depends(get_db)):
     code = f"RFS-{uuid.uuid4().hex[:8].upper()}"
     ration = _build_ration(req.country, req.householdSize)
+
+    # Mock user for open access
+    current_user = {"sub": "mock-ngo", "role": "ngo_volunteer", "name": "Mock NGO"}
 
     doc = {
         "ticketCode": code,
@@ -100,7 +103,6 @@ async def list_tickets(
     status: str = "",
     skip: int = 0,
     limit: int = 50,
-    current_user=Depends(require_ngo),
     db=Depends(get_db),
 ):
     query = {"country": country}

@@ -218,11 +218,12 @@ def write_gdf_to_mongo(gdf, collection: str, country: str, mongo_uri: str):
 # ── Graph construction (roads → NetworkX) ───────────────────────────────
 def build_road_graph(roads_gdf, country: str, cache_path: str) -> Optional[object]:
     """Build a routable NetworkX graph from roads GeoDataFrame using momepy."""
+
     try:
         import networkx as nx
         import momepy
         import geopandas as gpd
-        from shapely.geometry import LineString
+        from shapely.geometry import LineString, Point
     except ImportError as exc:
         logger.error(f"Missing library: {exc}. Install: pip install momepy networkx")
         return None
@@ -263,6 +264,45 @@ def build_road_graph(roads_gdf, country: str, cache_path: str) -> Optional[objec
         if isinstance(node, tuple) and len(node) == 2:
             G.nodes[node]["x"] = node[0]
             G.nodes[node]["y"] = node[1]
+
+    # --- Enhancement: Mark unsafe nodes/edges and estimate travel time ---
+    # Load flagged places (unsafe) from MongoDB if available
+    try:
+        import pymongo
+        client = pymongo.MongoClient("mongodb://localhost:27017/resilient_food", serverSelectionTimeoutMS=5000)
+        db = client["resilient_food"]
+        flagged_places = list(db["places"].find({"country": country, "flagged": True}))
+        flagged_coords = [(p["location"]["coordinates"][0], p["location"]["coordinates"][1]) for p in flagged_places if "location" in p]
+        client.close()
+    except Exception as exc:
+        logger.warning(f"Could not load flagged places for unsafe routing: {exc}")
+        flagged_coords = []
+
+    # Mark nodes as unsafe if within 0.01 deg (~1km) of flagged place
+    for node in G.nodes():
+        x, y = G.nodes[node].get("x"), G.nodes[node].get("y")
+        G.nodes[node]["unsafe"] = any((abs(x - fx) < 0.01 and abs(y - fy) < 0.01) for fx, fy in flagged_coords)
+
+    # Mark edges as unsafe if either node is unsafe
+    for u, v, data in G.edges(data=True):
+        data["unsafe"] = G.nodes[u].get("unsafe", False) or G.nodes[v].get("unsafe", False)
+        # Estimate travel time (seconds): use length (meters) and assume speed (km/h) by road type
+        length = data.get("length", 1)
+        highway = data.get("highway", "")
+        # Default speeds (km/h) by road type
+        speed_kmh = 50
+        if isinstance(highway, str):
+            if highway in ["motorway", "trunk", "primary"]:
+                speed_kmh = 70
+            elif highway in ["secondary", "tertiary"]:
+                speed_kmh = 50
+            elif highway in ["residential", "unclassified", "track", "path"]:
+                speed_kmh = 25
+        # Calculate travel time in seconds
+        data["travel_time"] = length / (speed_kmh * 1000 / 3600)
+        # Penalize unsafe edges heavily
+        if data["unsafe"]:
+            data["travel_time"] *= 10
 
     # Cache
     try:
