@@ -34,6 +34,8 @@ The start script:
 - Seeds demo data (NGOs, hotspots, market messages)
 - Starts React/Vite on port 5173
 
+## Live Link - `https://vercel.com/akowta-gmailcoms-projects/george-hacks-food4-all`
+
 ## Usage
 
 - Open the app at `http://localhost:5173`
@@ -175,7 +177,7 @@ Builds a NetworkX graph from HOT roads shapefiles using `geopandas + momepy`. Ca
 
 ## Demo Walkthrough
 
-1. **Landing** → Visit `http://localhost:5173`. NGO directory loads Haiti NGOs from MongoDB (seeded from HDX or demo data). Switch country to DRC.
+1. **Landing** → Visit `http://localhost:5173`. And if you want to test out the application, visit `https://vercel.com/akowta-gmailcoms-projects/george-hacks-food4-all`. NGO directory loads Haiti NGOs from MongoDB (seeded from HDX or demo data). Switch country to DRC.
 
 2. **Donation** → Click "General Public Donor" → register → select an NGO → Connect Phantom (Devnet) → donate 0.25 SOL → see tx hash receipt.
 
