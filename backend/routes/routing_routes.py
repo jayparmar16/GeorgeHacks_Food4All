@@ -12,7 +12,11 @@ from services.auth import require_ngo
 router = APIRouter(prefix="/routing", tags=["routing"])
 logger = logging.getLogger(__name__)
 
-GRAPH_CACHE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "haiti_road_graph.pkl")
+GRAPH_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+GRAPH_CACHE_PATHS = {
+    "hti": os.path.join(GRAPH_DIR, "haiti_road_graph.pkl"),
+    "cod": os.path.join(GRAPH_DIR, "drc_road_graph.pkl"),
+}
 
 _graph_cache = {}
 
@@ -20,7 +24,7 @@ _graph_cache = {}
 def load_graph(country: str = "hti"):
     if country in _graph_cache:
         return _graph_cache[country]
-    path = GRAPH_CACHE_PATH if country == "hti" else GRAPH_CACHE_PATH.replace("haiti", country)
+    path = GRAPH_CACHE_PATHS.get(country, os.path.join(GRAPH_DIR, f"{country}_road_graph.pkl"))
     if os.path.exists(path):
         try:
             with open(path, "rb") as f:

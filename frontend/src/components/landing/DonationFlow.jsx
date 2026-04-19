@@ -13,13 +13,14 @@ import { Badge } from '../ui/Badge'
 import AuthModal from './AuthModal'
 import toast from 'react-hot-toast'
 
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import { SystemProgram, Transaction, PublicKey } from '@solana/web3.js'
 import '@solana/wallet-adapter-react-ui/styles.css'
 
 const AMOUNTS = [0.1, 0.25, 0.5, 1.0, 2.0]
 
-function ImpactPanel() {
+function ImpactPanel({ selectedNgo }) {
   const [totals, setTotals] = useState({ count: 0, sol: 0 })
   useEffect(() => {
     donationAPI.mine().then(r => {
@@ -55,12 +56,24 @@ function ImpactPanel() {
           </p>
         </div>
       </div>
-      <div className="flex-1 flex flex-col justify-center items-center text-center gap-2 rounded-xl border border-dashed border-white/[0.08] p-6">
-        <TrendingUp size={20} className="text-slate-600" />
-        <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
-          Select an NGO from the directory, then log in as a donor to make a Solana donation.
-        </p>
-      </div>
+      {selectedNgo ? (
+        <div className="flex-1 flex flex-col justify-center items-center text-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-6">
+          <CheckCircle size={20} className="text-emerald-400" />
+          <p className="text-xs font-semibold text-emerald-300">
+            {selectedNgo.organization} Selected
+          </p>
+          <p className="text-[11px] text-slate-500 max-w-xs leading-relaxed">
+            Please log out and return as a general public donor to process Solana transactions.
+          </p>
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col justify-center items-center text-center gap-2 rounded-xl border border-dashed border-white/[0.08] p-6">
+          <TrendingUp size={20} className="text-slate-600" />
+          <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
+            Select an NGO from the directory, then log in as a donor to make a Solana donation.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -103,7 +116,9 @@ function Stepper({ current }) {
 
 export default function DonationFlow({ selectedNgo }) {
   const { user, isInternal } = useAuth()
-  const { publicKey, connected } = useWallet()
+  const { connection } = useConnection()
+  const { publicKey, connected, sendTransaction } = useWallet()
+
   const [donorType, setDonorType] = useState('')
   const [showAuth, setShowAuth] = useState(false)
   const [authRole, setAuthRole] = useState('general_public_donor')
@@ -123,7 +138,7 @@ export default function DonationFlow({ selectedNgo }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 overflow-y-auto">
-          <ImpactPanel />
+          <ImpactPanel selectedNgo={selectedNgo} />
         </CardContent>
       </Card>
     )
@@ -142,16 +157,34 @@ export default function DonationFlow({ selectedNgo }) {
     try {
       const final = custom ? parseFloat(custom) : amount
       if (!final || final <= 0) { toast.error('Enter a valid amount'); return }
-      const mockTx = `devnet_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      
+      const lamports = Math.round(final * 1e9)
+      const treasuryPubkey = new PublicKey('A2TyTFe7cY5KP4di42EHBk5tGZJjzLQpUR2K5fy5YiWH')
+      
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: treasuryPubkey,
+          lamports,
+        })
+      )
+      
+      const { blockhash } = await connection.getLatestBlockhash()
+      transaction.recentBlockhash = blockhash
+      transaction.feePayer = publicKey
+      
+      const signature = await sendTransaction(transaction, connection)
+      await connection.confirmTransaction(signature, 'processed')
+
       const { data } = await donationAPI.create({
         ngoId: selectedNgo.id, amount: final, currency: 'SOL',
-        txHash: mockTx, walletAddress: publicKey.toString(),
+        txHash: signature, walletAddress: publicKey.toString(),
       })
       setReceipt({ ...data, final, wallet: publicKey.toString() })
       setStep('done')
-      toast.success('Donation recorded!')
+      toast.success('Donation recorded on-chain!')
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Donation failed')
+      toast.error(err.response?.data?.detail || err.message || 'Donation failed')
     } finally { setBusy(false) }
   }
 
@@ -321,7 +354,15 @@ export default function DonationFlow({ selectedNgo }) {
                 <div className="pt-2.5 border-t border-white/[0.06]">
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Transaction hash</p>
                   <div className="flex items-center gap-2">
-                    <p className="font-mono text-[10.5px] text-slate-300 truncate flex-1">{receipt.txHash}</p>
+                    <a
+                      href={`https://explorer.solana.com/tx/${receipt.txHash}?cluster=devnet`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-[10.5px] text-emerald-400 hover:text-emerald-300 hover:underline truncate flex-1"
+                      title="View on Solana Explorer"
+                    >
+                      {receipt.txHash}
+                    </a>
                     <button
                       onClick={() => { navigator.clipboard.writeText(receipt.txHash); toast.success('Copied!') }}
                       className="shrink-0 text-slate-500 hover:text-slate-200 p-1 rounded hover:bg-white/[0.06] transition-colors"

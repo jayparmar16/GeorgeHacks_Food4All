@@ -54,15 +54,64 @@ export default function AuthModal({ open, onClose, defaultRole = 'general_public
       description={mode === 'login' ? 'Continue your donation.' : 'Only takes a moment — no credit card required.'}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex items-center gap-2.5 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-          <div className="shrink-0 w-8 h-8 rounded-md bg-white/[0.04] grid place-items-center">
-            <RoleInfo.icon size={14} className="text-slate-400" />
+        {mode === 'login' && (
+          <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
+            <div className="flex items-center gap-1.5 mb-2 px-1">
+              <Shield size={11} className="text-emerald-400" />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+                Quick demo access
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Public Demo', email: 'donor@demo.com', color: 'emerald' },
+                { label: 'UN Demo', email: 'un@demo.com', color: 'blue' },
+              ].map(d => (
+                <button
+                  key={d.email}
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
+                    setLoading(true)
+                    try {
+                      await login(d.email, 'demo1234')
+                      toast.success('Signed in')
+                      onSuccess?.()
+                    } catch {
+                      toast.error('Login failed. Run seed-demo first.')
+                    } finally { setLoading(false) }
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-lg border border-white/[0.08] bg-white/[0.02] hover:border-white/[0.16] hover:bg-white/[0.05] transition-all text-left disabled:opacity-50"
+                >
+                  <div className={`shrink-0 w-6 h-6 rounded grid place-items-center ${d.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                    <User size={11} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-slate-100 truncate">{d.label}</p>
+                    <p className="text-[9px] text-slate-500 font-mono">demo1234</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3 mt-4 mb-1">
+              <div className="flex-1 h-px bg-white/[0.06]" />
+              <span className="text-[9px] uppercase tracking-widest text-slate-600">or use email</span>
+              <div className="flex-1 h-px bg-white/[0.06]" />
+            </div>
           </div>
-          <div className="flex items-center gap-2 min-w-0">
-            <Badge color={RoleInfo.color} size="md">{RoleInfo.label}</Badge>
-            <span className="text-[11px] text-slate-500">access level</span>
+        )}
+
+        {mode === 'register' && (
+          <div className="flex items-center gap-2.5 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+            <div className="shrink-0 w-8 h-8 rounded-md bg-white/[0.04] grid place-items-center">
+              <RoleInfo.icon size={14} className="text-slate-400" />
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <Badge color={RoleInfo.color} size="md">{RoleInfo.label}</Badge>
+              <span className="text-[11px] text-slate-500">access level</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {mode === 'register' && (
           <>

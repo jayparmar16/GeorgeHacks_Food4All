@@ -78,7 +78,7 @@ export default function ResilientMap({
         </LayersControl.Overlay>
 
         {/* Farmers */}
-        <LayersControl.Overlay name="Farmers (SowSafe)">
+        <LayersControl.Overlay name="Farmers (SowSafe)" checked>
           <LayerGroup>
             {farmers.map((f, i) => (
               <CircleMarker key={i}

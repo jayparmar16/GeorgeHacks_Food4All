@@ -1,14 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    nodePolyfills({
+      include: ['buffer'],
+      globals: { Buffer: true },
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      buffer: 'buffer',
     },
   },
   server: {
@@ -25,6 +32,6 @@ export default defineConfig({
     'process.env': {},
   },
   optimizeDeps: {
-    include: ['buffer', '@solana/web3.js'],
+    include: ['@solana/web3.js'],
   },
 })

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, MapPin, Users, RefreshCw, Database, CheckCircle2, ChevronRight } from 'lucide-react'
+import { Search, Phone, Mail, MapPin, Users, RefreshCw, Database, CheckCircle2, Info, ChevronRight } from 'lucide-react'
 import { ngoAPI, adminAPI } from '../../lib/api'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
+import NGODetailModal from './NGODetailModal'
 import { CountrySelect } from '../ui/CountrySelect'
 import { EmptyState } from '../ui/EmptyState'
 
@@ -14,15 +15,15 @@ const SECTOR_COLOR = {
 }
 const tagColor = (s) => SECTOR_COLOR[s.trim()] || 'slate'
 
-function NGOCard({ ngo, selected, onSelect }) {
+function NGOCard({ ngo, selected, onSelect, onLearnMore }) {
   const sectors = (ngo.sectors || '').split(/[;,]/).map(s => s.trim()).filter(Boolean)
   return (
-    <motion.button
+    <motion.div
       layout
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       onClick={() => onSelect(ngo)}
-      className={`group text-left w-full relative rounded-xl border px-4 py-4 transition-all duration-150 ${
+      className={`group cursor-pointer text-left w-full relative rounded-xl border px-4 py-4 transition-all duration-150 ${
         selected
           ? 'border-emerald-500/50 bg-emerald-500/[0.07] shadow-[0_0_0_1px_rgba(16,185,129,0.15)_inset]'
           : 'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]'
@@ -68,7 +69,27 @@ function NGOCard({ ngo, selected, onSelect }) {
           )}
         </div>
       </div>
-    </motion.button>
+      <div className="flex items-center gap-3 mt-4 pt-3 border-t border-white/5">
+        <button
+          onClick={e => { e.stopPropagation(); onLearnMore(ngo) }}
+          className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded-md"
+        >
+          <Info size={12} />Learn More
+        </button>
+        {ngo.email && (
+          <a href={`mailto:${ngo.email}`} onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-slate-200 transition-colors">
+            <Mail size={12} />Email
+          </a>
+        )}
+        {ngo.phone && (
+          <a href={`tel:${ngo.phone}`} onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-slate-200 transition-colors">
+            <Phone size={12} />Call
+          </a>
+        )}
+      </div>
+    </motion.div>
   )
 }
 
@@ -78,6 +99,7 @@ export default function NGODirectory({ country, onCountryChange, selectedNgo, on
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
   const [seeding, setSeeding] = useState(false)
+  const [detailNgo, setDetailNgo] = useState(null)
 
   const fetch = async () => {
     setLoading(true)
@@ -167,14 +189,22 @@ export default function NGODirectory({ country, onCountryChange, selectedNgo, on
                 <NGOCard
                   key={ngo.id || ngo._id}
                   ngo={ngo}
-                  selected={selectedNgo?.id === ngo.id || selectedNgo?._id === ngo._id}
+                  selected={!!selectedNgo && ((ngo.id && selectedNgo.id === ngo.id) || (ngo._id && selectedNgo._id === ngo._id))}
                   onSelect={onSelectNgo}
+                  onLearnMore={setDetailNgo}
                 />
               ))}
             </div>
           </AnimatePresence>
         )}
       </CardContent>
+
+      <NGODetailModal
+        ngo={detailNgo}
+        open={!!detailNgo}
+        onClose={() => setDetailNgo(null)}
+        onSelectForDonation={onSelectNgo}
+      />
     </Card>
   )
 }
