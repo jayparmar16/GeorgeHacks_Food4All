@@ -34,8 +34,6 @@ The start script:
 - Seeds demo data (NGOs, hotspots, market messages)
 - Starts React/Vite on port 5173
 
-## Live Link - `https://vercel.com/akowta-gmailcoms-projects/george-hacks-food4-all`
-
 ## Usage
 
 - Open the app at `http://localhost:5173`
