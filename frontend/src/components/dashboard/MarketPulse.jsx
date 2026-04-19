@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { MessageSquare, Send, Zap, RefreshCw } from 'lucide-react'
+import { MessageSquare, Send, Sparkles, RefreshCw } from 'lucide-react'
 import { pulseAPI } from '../../lib/api'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
-import { Input, Select } from '../ui/Input'
+import { Card, CardContent } from '../ui/Card'
+import { Select } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
+import { EmptyState } from '../ui/EmptyState'
 import toast from 'react-hot-toast'
 
 const REGIONS_BY_COUNTRY = {
@@ -18,15 +19,20 @@ function Message({ msg }) {
   const ts = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const color = MSG_COLORS[msg.messageType] || 'slate'
   return (
-    <div className="flex flex-col gap-0.5 p-3 rounded-lg bg-slate-800/60 border border-slate-700/40">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-300">{msg.vendor || 'System'}</span>
-        <div className="flex items-center gap-1.5">
-          <Badge color={color}>{msg.messageType}</Badge>
-          <span className="text-xs text-slate-500">{ts}</span>
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400/80 to-emerald-600/80 grid place-items-center text-[10px] font-bold text-slate-950 shrink-0">
+            {(msg.vendor || 'S')[0]?.toUpperCase()}
+          </div>
+          <span className="text-[12px] font-medium text-slate-200 truncate">{msg.vendor || 'System'}</span>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Badge color={color} size="sm">{msg.messageType}</Badge>
+          <span className="text-[10px] text-slate-600 tnum">{ts}</span>
         </div>
       </div>
-      <p className="text-sm text-slate-200">{msg.text}</p>
+      <p className="text-[13px] text-slate-200 leading-relaxed">{msg.text}</p>
     </div>
   )
 }
@@ -38,7 +44,6 @@ export default function MarketPulse({ country = 'hti' }) {
   const [newMsg, setNewMsg] = useState('')
   const [msgType, setMsgType] = useState('update')
   const [summarizing, setSummarizing] = useState(false)
-  const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
 
   const fetchMessages = async () => {
@@ -47,7 +52,6 @@ export default function MarketPulse({ country = 'hti' }) {
       const { data } = await pulseAPI.messages(region, { country })
       setMessages(data.messages || [])
     } catch {}
-    // Fetch latest summary
     try {
       const { data } = await pulseAPI.summary(region, { country })
       if (data.summary) setSummary(data.summary)
@@ -77,62 +81,78 @@ export default function MarketPulse({ country = 'hti' }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      {/* Region selector */}
-      <div className="flex gap-2">
-        <select
-          value={region} onChange={e => setRegion(e.target.value)}
-          className="flex-1 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
-        >
-          {(REGIONS_BY_COUNTRY[country] || []).map(r => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
-        <Button variant="outline" size="sm" onClick={fetchMessages}><RefreshCw size={14} /></Button>
-        <Button variant="secondary" size="sm" onClick={summarize} disabled={summarizing}>
-          <Zap size={14} /> {summarizing ? '…' : 'Gemini Summary'}
-        </Button>
-      </div>
-
-      {/* Gemini summary */}
-      {summary && (
-        <div className="p-3 rounded-xl bg-blue-900/20 border border-blue-700/40">
-          <div className="flex items-center gap-1.5 mb-1">
-            <Zap size={12} className="text-blue-400" />
-            <span className="text-xs font-medium text-blue-400">Gemini Market Pulse</span>
+    <Card>
+      <CardContent className="p-0">
+        {/* Top bar */}
+        <div className="flex flex-col sm:flex-row gap-2 p-4 border-b border-white/[0.06]">
+          <div className="flex-1">
+            <Select value={region} onChange={e => setRegion(e.target.value)}>
+              {(REGIONS_BY_COUNTRY[country] || []).map(r => <option key={r} value={r}>{r}</option>)}
+            </Select>
           </div>
-          <p className="text-sm text-slate-200">{summary}</p>
+          <div className="flex gap-2 shrink-0">
+            <Button variant="subtle" size="md" onClick={fetchMessages}>
+              <RefreshCw size={13} /> Refresh
+            </Button>
+            <Button variant="secondary" size="md" onClick={summarize} disabled={summarizing}>
+              <Sparkles size={13} className="text-amber-400" />
+              {summarizing ? 'Summarizing…' : 'Gemini summary'}
+            </Button>
+          </div>
         </div>
-      )}
 
-      {/* Messages */}
-      <div className="flex-1 flex flex-col gap-2 overflow-y-auto max-h-72">
-        {messages.length === 0
-          ? <p className="text-center text-slate-500 text-sm py-8">No messages yet for {region}</p>
-          : messages.map((m, i) => <Message key={i} msg={m} />)
-        }
-        <div ref={bottomRef} />
-      </div>
+        {/* Gemini summary */}
+        {summary && (
+          <div className="mx-4 mt-4 p-3.5 rounded-xl bg-blue-500/[0.06] border border-blue-500/25">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Sparkles size={12} className="text-blue-400" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-200">
+                Gemini market pulse
+              </span>
+            </div>
+            <p className="text-[13px] text-slate-200 leading-relaxed">{summary}</p>
+          </div>
+        )}
 
-      {/* Compose */}
-      <div className="flex gap-2 items-end">
-        <select value={msgType} onChange={e => setMsgType(e.target.value)}
-          className="rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-xs text-slate-300 focus:border-emerald-500 focus:outline-none">
-          <option value="update">Update</option>
-          <option value="price">Price</option>
-          <option value="shortage">Shortage</option>
-          <option value="broadcast">Broadcast</option>
-        </select>
-        <input
-          className="flex-1 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
-          placeholder="Type a market update…"
-          value={newMsg} onChange={e => setNewMsg(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && sendMessage()}
-        />
-        <Button size="sm" onClick={sendMessage} disabled={!newMsg.trim()}>
-          <Send size={14} />
-        </Button>
-      </div>
-    </div>
+        {/* Messages */}
+        <div className="p-4 flex flex-col gap-2 max-h-[440px] overflow-y-auto">
+          {messages.length === 0 ? (
+            <EmptyState
+              icon={MessageSquare}
+              title={`No messages for ${region}`}
+              description="Post the first market update — prices, shortages, or broadcasts."
+              compact
+            />
+          ) : (
+            messages.map((m, i) => <Message key={i} msg={m} />)
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Compose */}
+        <div className="p-3 border-t border-white/[0.06] flex flex-col sm:flex-row gap-2 bg-black/20">
+          <select
+            value={msgType}
+            onChange={e => setMsgType(e.target.value)}
+            className="h-9 rounded-lg bg-[#0c0e14] border border-white/10 px-2.5 text-[12px] text-slate-300 focus:outline-none focus:border-emerald-500/60 cursor-pointer sm:shrink-0"
+          >
+            <option value="update">Update</option>
+            <option value="price">Price</option>
+            <option value="shortage">Shortage</option>
+            <option value="broadcast">Broadcast</option>
+          </select>
+          <input
+            placeholder="Type a market update…"
+            value={newMsg}
+            onChange={e => setNewMsg(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && sendMessage()}
+            className="flex-1 h-9 rounded-lg border border-white/10 bg-[#0c0e14] px-3 text-[13px] text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/15"
+          />
+          <Button size="md" onClick={sendMessage} disabled={!newMsg.trim()}>
+            <Send size={13} /> Send
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Phone, Mail, MapPin, Users, RefreshCw, Database, CheckCircle2 } from 'lucide-react'
+import { Search, Phone, Mail, MapPin, Users, RefreshCw, Database, CheckCircle2, Info, ChevronRight } from 'lucide-react'
 import { ngoAPI, adminAPI } from '../../lib/api'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
+import NGODetailModal from './NGODetailModal'
+import { CountrySelect } from '../ui/CountrySelect'
+import { EmptyState } from '../ui/EmptyState'
 
 const SECTOR_COLOR = {
   'Food Security': 'green', 'Disaster Relief': 'red', 'Nutrition': 'amber',
   'Education': 'blue', 'Water': 'cyan', 'Shelter': 'purple',
 }
-function tagColor(s) { return SECTOR_COLOR[s.trim()] || 'slate' }
+const tagColor = (s) => SECTOR_COLOR[s.trim()] || 'slate'
 
-function NGOCard({ ngo, selected, onSelect }) {
+function NGOCard({ ngo, selected, onSelect, onLearnMore }) {
   const sectors = (ngo.sectors || '').split(/[;,]/).map(s => s.trim()).filter(Boolean)
   return (
     <motion.div
@@ -20,48 +23,72 @@ function NGOCard({ ngo, selected, onSelect }) {
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       onClick={() => onSelect(ngo)}
-      className={`cursor-pointer rounded-lg border p-3 transition-all ${
+      className={`group cursor-pointer text-left w-full relative rounded-xl border px-4 py-4 transition-all duration-150 ${
         selected
-          ? 'border-emerald-500/60 bg-emerald-950/30'
-          : 'border-white/6 bg-white/2 hover:border-white/12 hover:bg-white/4'
+          ? 'border-emerald-500/50 bg-emerald-500/[0.07] shadow-[0_0_0_1px_rgba(16,185,129,0.15)_inset]'
+          : 'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]'
       }`}
     >
-      <div className="flex items-start justify-between gap-2 mb-1.5">
-        <p className="text-xs font-semibold text-slate-200 leading-snug">{ngo.organization}</p>
-        <div className="flex items-center gap-1 shrink-0">
-          {selected && <CheckCircle2 size={12} className="text-emerald-400" />}
-          {ngo.source === 'HDX 3W' && (
-            <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-blue-950/60 text-blue-400 border border-blue-800/40">
-              <Database size={8} />HDX
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-sm font-semibold text-slate-100 leading-snug truncate">
+              {ngo.organization}
+            </p>
+            {ngo.source === 'HDX 3W' && (
+              <span className="shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/25">
+                <Database size={9} />HDX
+              </span>
+            )}
+          </div>
+
+          {sectors.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {sectors.slice(0, 2).map((s, i) => <Badge key={i} color={tagColor(s)} size="sm">{s}</Badge>)}
+              {sectors.length > 2 && (
+                <span className="text-[11px] text-slate-500 self-center font-medium">+{sectors.length - 2}</span>
+              )}
+            </div>
+          )}
+
+          {ngo.region && (
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <MapPin size={11} className="shrink-0" />
+              <span className="truncate">{ngo.region}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="shrink-0 pt-0.5">
+          {selected ? (
+            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-slate-950">
+              <CheckCircle2 size={14} strokeWidth={2.5} />
             </span>
+          ) : (
+            <ChevronRight size={16} className="text-slate-600 group-hover:text-slate-300 group-hover:translate-x-0.5 transition-all" />
           )}
         </div>
       </div>
-      <div className="flex flex-wrap gap-1 mb-2">
-        {sectors.slice(0, 2).map((s, i) => <Badge key={i} color={tagColor(s)}>{s}</Badge>)}
-        {sectors.length > 2 && <span className="text-[10px] text-slate-600 self-center">+{sectors.length - 2}</span>}
+      <div className="flex items-center gap-3 mt-4 pt-3 border-t border-white/5">
+        <button
+          onClick={e => { e.stopPropagation(); onLearnMore(ngo) }}
+          className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded-md"
+        >
+          <Info size={12} />Learn More
+        </button>
+        {ngo.email && (
+          <a href={`mailto:${ngo.email}`} onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-slate-200 transition-colors">
+            <Mail size={12} />Email
+          </a>
+        )}
+        {ngo.phone && (
+          <a href={`tel:${ngo.phone}`} onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-slate-200 transition-colors">
+            <Phone size={12} />Call
+          </a>
+        )}
       </div>
-      {ngo.region && (
-        <div className="flex items-center gap-1 text-[11px] text-slate-500">
-          <MapPin size={9} className="shrink-0" /><span className="truncate">{ngo.region}</span>
-        </div>
-      )}
-      {(ngo.email || ngo.phone) && (
-        <div className="flex gap-3 mt-2 pt-2 border-t border-white/5">
-          {ngo.email && (
-            <a href={`mailto:${ngo.email}`} onClick={e => e.stopPropagation()}
-              className="flex items-center gap-1 text-[11px] text-emerald-500 hover:text-emerald-400">
-              <Mail size={9} />Email
-            </a>
-          )}
-          {ngo.phone && (
-            <a href={`tel:${ngo.phone}`} onClick={e => e.stopPropagation()}
-              className="flex items-center gap-1 text-[11px] text-emerald-500 hover:text-emerald-400">
-              <Phone size={9} />Call
-            </a>
-          )}
-        </div>
-      )}
     </motion.div>
   )
 }
@@ -72,6 +99,7 @@ export default function NGODirectory({ country, onCountryChange, selectedNgo, on
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
   const [seeding, setSeeding] = useState(false)
+  const [detailNgo, setDetailNgo] = useState(null)
 
   const fetch = async () => {
     setLoading(true)
@@ -92,83 +120,91 @@ export default function NGODirectory({ country, onCountryChange, selectedNgo, on
   const hdx = ngos.filter(n => n.source === 'HDX 3W').length
 
   return (
-    <Card className="flex flex-col min-h-0 h-full">
-      <CardHeader>
-        <div className="flex items-center justify-between mb-2">
-          <CardTitle className="flex items-center gap-2">
-            <Users size={13} className="text-emerald-400" />
+    <Card className="flex flex-col h-full min-h-[600px]">
+      <CardHeader className="pb-5">
+        <div className="flex items-center justify-between mb-4">
+          <CardTitle>
+            <Users size={15} className="text-emerald-400" />
             NGO Directory
             {total > 0 && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
-                {total}
-              </span>
+              <Badge color="green" size="sm" className="ml-1">{total}</Badge>
             )}
           </CardTitle>
-          <button onClick={fetch} disabled={loading} className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded">
-            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+          <button
+            onClick={fetch}
+            disabled={loading}
+            className="text-slate-500 hover:text-slate-100 transition-colors p-2 rounded-md hover:bg-white/[0.05]"
+            aria-label="Refresh"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
 
-        <select
-          value={country}
-          onChange={e => onCountryChange(e.target.value)}
-          className="w-full mb-2 text-xs bg-white/4 border border-white/8 text-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-600 cursor-pointer"
-        >
-          <option value="hti">🇭🇹 Haiti</option>
-          <option value="cod">🇨🇩 DRC (Congo)</option>
-        </select>
-
-        <div className="relative">
-          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
-          <input
-            placeholder="Search by name or sector…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white/4 border border-white/8 text-slate-300 placeholder-slate-600 rounded-lg focus:outline-none focus:border-emerald-600"
-          />
+        <div className="flex gap-2.5">
+          <CountrySelect value={country} onChange={onCountryChange} className="shrink-0" />
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <input
+              placeholder="Search by name or sector…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-10 pr-3 h-10 text-sm bg-[#0c0e14] border border-white/10 text-slate-200 placeholder-slate-600 rounded-lg focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/15 hover:border-white/15 transition-colors"
+            />
+          </div>
         </div>
 
         {hdx > 0 && (
-          <p className="text-[10px] text-slate-600 mt-1.5 flex items-center gap-1">
-            <Database size={9} className="text-blue-500" />
+          <p className="text-xs text-slate-500 mt-3 flex items-center gap-1.5">
+            <Database size={11} className="text-blue-400" />
             {hdx} sourced from HDX CKAN live data
           </p>
         )}
       </CardHeader>
 
-      <CardContent className="flex-1 min-h-0 overflow-y-auto py-2">
+      <CardContent className="flex-1 min-h-0 overflow-y-auto pt-0">
         {loading ? (
-          <div className="flex flex-col gap-2 p-1">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="rounded-lg border border-white/5 bg-white/2 p-3 animate-pulse">
-                <div className="h-3 bg-white/8 rounded w-3/4 mb-2" />
-                <div className="h-2.5 bg-white/4 rounded w-1/2" />
+          <div className="flex flex-col gap-2.5">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4">
+                <div className="h-3.5 shimmer rounded w-3/4 mb-2.5" />
+                <div className="h-2.5 shimmer rounded w-1/2" />
               </div>
             ))}
           </div>
         ) : ngos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 gap-3">
-            <Users size={20} className="text-slate-700" />
-            <p className="text-xs text-slate-500">No NGOs found</p>
-            <Button variant="outline" size="sm" onClick={seed} disabled={seeding}>
-              {seeding ? <><RefreshCw size={11} className="animate-spin" />Loading…</> : 'Load Demo Data'}
-            </Button>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="No NGOs found"
+            description="Load sample data to explore the directory and donation flow."
+            action={
+              <Button variant="outline" size="sm" onClick={seed} disabled={seeding}>
+                {seeding ? <><RefreshCw size={12} className="animate-spin" />Loading…</> : 'Load demo data'}
+              </Button>
+            }
+          />
         ) : (
           <AnimatePresence>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2.5">
               {ngos.map(ngo => (
                 <NGOCard
                   key={ngo.id || ngo._id}
                   ngo={ngo}
-                  selected={selectedNgo?.id === ngo.id || selectedNgo?._id === ngo._id}
+                  selected={!!selectedNgo && ((ngo.id && selectedNgo.id === ngo.id) || (ngo._id && selectedNgo._id === ngo._id))}
                   onSelect={onSelectNgo}
+                  onLearnMore={setDetailNgo}
                 />
               ))}
             </div>
           </AnimatePresence>
         )}
       </CardContent>
+
+      <NGODetailModal
+        ngo={detailNgo}
+        open={!!detailNgo}
+        onClose={() => setDetailNgo(null)}
+        onSelectForDonation={onSelectNgo}
+      />
     </Card>
   )
 }

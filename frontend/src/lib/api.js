@@ -36,6 +36,8 @@ export const authAPI = {
 export const ngoAPI = {
   list: (params) => api.get('/ngos', { params }),
   get: (id) => api.get(`/ngos/${id}`),
+  profile: (id) => api.get(`/ngos/${id}/profile`),
+  news: (id, limit = 5) => api.get(`/ngos/${id}/news`, { params: { limit } }),
 }
 
 // Vendors

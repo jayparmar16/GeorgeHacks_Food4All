@@ -4,19 +4,24 @@ from config import settings
 
 logger = logging.getLogger(__name__)
 
+import threading
+
 _client = None
+_client_lock = threading.Lock()
 
 
 def get_client():
     global _client
     if _client is None:
-        if not settings.GEMINI_API_KEY:
-            return None
-        try:
-            from google import genai
-            _client = genai.Client(api_key=settings.GEMINI_API_KEY)
-        except Exception as e:
-            logger.warning(f"Gemini client init failed: {e}")
+        with _client_lock:
+            if _client is None:
+                if not settings.GEMINI_API_KEY:
+                    return None
+                try:
+                    from google import genai
+                    _client = genai.Client(api_key=settings.GEMINI_API_KEY)
+                except Exception as e:
+                    logger.warning(f"Gemini client init failed: {e}")
     return _client
 
 
@@ -26,7 +31,7 @@ def _generate(prompt: str) -> str:
         return None
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=prompt,
         )
         return response.text

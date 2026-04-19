@@ -49,6 +49,9 @@ async def fetch_weather_alerts(country_code: str = "hti") -> list:
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.get(url)
+            if resp.status_code != 200:
+                logger.warning(f"Weather API returned {resp.status_code}. Falling back to mock.")
+                return _mock_weather_alerts(country_code)
             data = resp.json()
         alerts = []
         for alert in data.get("alerts", []):
