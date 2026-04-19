@@ -1,35 +1,55 @@
-import { clsx } from 'clsx'
+import { cn } from './Button'
 
-export function Card({ className, children, ...props }) {
+export function Card({ className, interactive = false, ...props }) {
   return (
     <div
-      className={clsx(
-        'rounded-xl border border-white/6 bg-slate-900/70 backdrop-blur-sm',
+      className={cn(
+        'relative rounded-xl border border-white/[0.06] bg-[#0c0e14]/80 backdrop-blur-sm',
+        'shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset,0_8px_24px_-16px_rgba(0,0,0,0.6)]',
+        interactive && 'transition-all duration-150 hover:border-white/[0.12] hover:bg-[#12151d]/80',
         className,
       )}
       {...props}
-    >
-      {children}
-    </div>
+    />
   )
 }
 
-export function CardHeader({ className, children }) {
+export function CardHeader({ className, ...props }) {
   return (
-    <div className={clsx('px-4 py-3 border-b border-white/6', className)}>
-      {children}
-    </div>
+    <div
+      className={cn('flex flex-col gap-1 px-5 pt-4 pb-3', className)}
+      {...props}
+    />
   )
 }
 
-export function CardTitle({ className, children }) {
+export function CardTitle({ className, as: As = 'h3', ...props }) {
   return (
-    <h3 className={clsx('text-sm font-semibold text-slate-200', className)}>
-      {children}
-    </h3>
+    <As
+      className={cn('text-[13px] font-semibold text-slate-100 leading-tight flex items-center gap-2', className)}
+      {...props}
+    />
   )
 }
 
-export function CardContent({ className, children }) {
-  return <div className={clsx('px-4 py-3', className)}>{children}</div>
+export function CardDescription({ className, ...props }) {
+  return (
+    <p
+      className={cn('text-xs text-slate-500 leading-relaxed', className)}
+      {...props}
+    />
+  )
+}
+
+export function CardContent({ className, ...props }) {
+  return <div className={cn('px-5 py-4', className)} {...props} />
+}
+
+export function CardFooter({ className, ...props }) {
+  return (
+    <div
+      className={cn('flex items-center px-5 py-3 border-t border-white/[0.06]', className)}
+      {...props}
+    />
+  )
 }
