@@ -6,11 +6,19 @@
 
 ---
 
+## Purpose
+
+Resilient Food Systems is a full-stack demo platform for disaster response coordination in Haiti and DRC. It connects local vendors, smallholder farmers, NGOs, and donors through:
+- pre-disaster readiness and resource mapping,
+- automated disaster signal detection,
+- supply routing and ration ticketing,
+- Solana Devnet donation flows and vendor activation.
+
 ## Quick Start (Local)
 
 ```bash
 # 1. Clone / open in terminal
-cd Hackathon
+cd GeorgeHacks_Food4All
 
 # 2. Start everything
 ./start.sh
@@ -20,11 +28,18 @@ cd Hackathon
 ```
 
 The start script:
-- Starts MongoDB (or uses URI in .env)
+- Starts MongoDB (or uses URI in `.env`)
 - Creates Python venv, installs deps
 - Starts FastAPI on port 8000
 - Seeds demo data (NGOs, hotspots, market messages)
 - Starts React/Vite on port 5173
+
+## Usage
+
+- Open the app at `http://localhost:5173`
+- Use the landing page to register or log in
+- Internal users see the dashboard at `/dashboard`
+- API docs are available at `http://localhost:8000/docs`
 
 ---
 
@@ -101,21 +116,21 @@ apscheduler
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     React Frontend (Vite)                        │
-│  Landing Page                    Internal Dashboard              │
+│                     React Frontend (Vite)                       │
+│  Landing Page                    Internal Dashboard             │
 │  ┌────────────┐ ┌──────────────┐  BEFORE │ AFTER                │
-│  │NGO Directory│ │Solana Donate │  ├ Map      │ ├ Tickets        │
+│  │NGO Directory│ │Solana Donate │  ├ Map      │ ├ Tickets       │
 │  │(HDX 3W)    │ │(Phantom/Dev) │  ├ Vendors  │ ├ Market Pulse   │
 │  └────────────┘ └──────────────┘  ├ Farmers  │ └ Supply Route   │
-│                                   ├ UN Hotspot│                  │
-│                                   └ Signals   │                  │
+│                                   ├ UN Hotspot│                 │
+│                                   └ Signals   │                 │
 └────────────────────────┬────────────────────────────────────────┘
                          │ axios /api proxy
 ┌────────────────────────▼────────────────────────────────────────┐
-│                   FastAPI Backend (Python)                        │
-│  /auth  /ngos  /vendors  /farmers  /donations  /tickets          │
-│  /market-pulse  /routing  /activations                           │
-│                                                                  │
+│                   FastAPI Backend (Python)                      │
+│  /auth  /ngos  /vendors  /farmers  /donations  /tickets         │
+│  /market-pulse  /routing  /activations                          │
+│                                                                 │
 │  Services: Gemini AI │ Twilio SMS │ Solana verify │ Signals     │
 │  Scheduler: 15min signal check │ 2am NGO ingest                 │
 └────────────────────────┬────────────────────────────────────────┘
@@ -184,4 +199,4 @@ See [ETHICS.md](ETHICS.md).
 
 ## License
 
-MIT
+This repository includes an open-source MIT license. See the `LICENSE` file for full terms.
