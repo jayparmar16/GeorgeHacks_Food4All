@@ -1,3 +1,13 @@
+from fastapi import APIRouter
+
+# Mock Auth Router for local/dev/demo
+mock_auth_router = APIRouter(prefix="/mock-auth", tags=["mock-auth"])
+
+@mock_auth_router.post("/ngo-token")
+def get_ngo_token():
+    from datetime import timedelta
+    token = create_token({"sub": "mock-ngo", "role": "ngo_volunteer"}, expires_delta=timedelta(days=1))
+    return {"access_token": token, "token_type": "bearer"}
 """Mock role-based auth — JWT tokens, no external provider."""
 from datetime import datetime, timedelta
 from typing import Optional

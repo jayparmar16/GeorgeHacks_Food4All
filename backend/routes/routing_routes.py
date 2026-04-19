@@ -82,15 +82,25 @@ async def compute_route(req: RouteRequest, db=Depends(get_db)):
     src_node = _snap_to_graph(G, req.sourceLon, req.sourceLat)
     dst_node = _snap_to_graph(G, req.destLon, req.destLat)
 
+    # Use 'travel_time' as the default weight, fallback to 'length' if not present
+    def edge_weight(u, v, data):
+        # Avoid unsafe edges by penalizing them heavily (already done in travel_time), but double-check
+        if data.get("unsafe", False):
+            return data.get("travel_time", data.get("length", 1)) * 10
+        return data.get("travel_time", data.get("length", 1))
+
     try:
-        path_nodes = nx.shortest_path(G, src_node, dst_node, weight="length")
+        path_nodes = nx.shortest_path(G, src_node, dst_node, weight=edge_weight)
         coords = []
         for node in path_nodes:
             data = G.nodes[node]
             coords.append([data.get("x", data.get("lon", 0)), data.get("y", data.get("lat", 0))])
 
+        # Calculate total travel time and distance
+        total_time = nx.shortest_path_length(G, src_node, dst_node, weight=edge_weight)
         total_length = nx.shortest_path_length(G, src_node, dst_node, weight="length")
         dist_km = round(total_length / 1000, 2)
+        travel_time_min = round(total_time / 60, 1)
 
         geojson = {"type": "LineString", "coordinates": coords}
 
@@ -115,6 +125,7 @@ async def compute_route(req: RouteRequest, db=Depends(get_db)):
             "geojson": geojson,
             "narrative": narrative,
             "distanceKm": dist_km,
+            "travelTimeMin": travel_time_min,
             "nodeCount": len(path_nodes),
             "fallback": False,
         }
