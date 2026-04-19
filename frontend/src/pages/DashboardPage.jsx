@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
-  Leaf, LogOut, Sun, CloudLightning, MapPin, Store, Sprout,
-  Ticket, MessageSquare, Navigation, AlertTriangle, ChevronLeft, Map,
+  LogOut, Sun, CloudLightning, MapPin, Store, Sprout,
+  Ticket, MessageSquare, Navigation, AlertTriangle, ChevronLeft, Map, Bell,
+  Users as UsersIcon,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useApp } from '../context/AppContext'
@@ -11,7 +12,12 @@ import { vendorAPI, farmerAPI, activationAPI } from '../lib/api'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { AlertBanner } from '../components/ui/AlertBanner'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
+import { Card, CardContent } from '../components/ui/Card'
+import { Logo } from '../components/ui/Logo'
+import { CountrySelect } from '../components/ui/CountrySelect'
+import { SegmentedTabs, PillTabs } from '../components/ui/Tabs'
+import { SectionHeader } from '../components/ui/SectionHeader'
+import { EmptyState } from '../components/ui/EmptyState'
 import ResilientMap from '../components/map/ResilientMap'
 import VendorRegistration from '../components/dashboard/VendorRegistration'
 import FarmerEnrollment from '../components/dashboard/FarmerEnrollment'
@@ -21,17 +27,17 @@ import SupplyRouting from '../components/dashboard/SupplyRouting'
 import DisasterSignals from '../components/dashboard/DisasterSignals'
 
 const BEFORE = [
-  { id: 'map',      label: 'Overview Map',    icon: Map,           desc: 'Vendors, farmers & hotspots'           },
-  { id: 'vendors',  label: 'Vendors',          icon: Store,         desc: 'RootNet food vendor registry'          },
-  { id: 'farmers',  label: 'Farmers',          icon: Sprout,        desc: 'SowSafe crop pledge ledger'            },
-  { id: 'hotspots', label: 'UN Hotspots',      icon: MapPin,        desc: 'WFP, UNHCR, MSF, UNICEF'              },
-  { id: 'signals',  label: 'Signals',          icon: AlertTriangle, desc: 'USGS earthquakes + weather'           },
+  { id: 'map',      label: 'Overview Map',  icon: Map,           description: 'Vendors, farmers & hotspots on one map',   accent: 'emerald' },
+  { id: 'vendors',  label: 'Vendors',       icon: Store,         description: 'RootNet food vendor registry',              accent: 'amber' },
+  { id: 'farmers',  label: 'Farmers',       icon: Sprout,        description: 'SowSafe crop pledge ledger',                accent: 'emerald' },
+  { id: 'hotspots', label: 'UN Hotspots',   icon: MapPin,        description: 'WFP, UNHCR, MSF, UNICEF coverage',          accent: 'blue' },
+  { id: 'signals',  label: 'Signals',       icon: AlertTriangle, description: 'USGS earthquakes + weather alerts',         accent: 'red' },
 ]
 
 const AFTER = [
-  { id: 'tickets',  label: 'Ration Tickets',   icon: Ticket,        desc: 'Issue & redeem food rations'          },
-  { id: 'pulse',    label: 'Market Pulse',      icon: MessageSquare, desc: 'Vendor comms + Gemini summaries'      },
-  { id: 'routing',  label: 'Supply Routing',    icon: Navigation,    desc: 'NetworkX road routing + AI narrative' },
+  { id: 'tickets',  label: 'Ration Tickets', icon: Ticket,        description: 'Issue and redeem food ration vouchers',      accent: 'emerald' },
+  { id: 'pulse',    label: 'Market Pulse',   icon: MessageSquare, description: 'Vendor comms with Gemini summaries',         accent: 'blue' },
+  { id: 'routing',  label: 'Supply Routing', icon: Navigation,    description: 'NetworkX road routing with AI narrative',    accent: 'amber' },
 ]
 
 export default function DashboardPage() {
@@ -65,204 +71,206 @@ export default function DashboardPage() {
   const isVendor = user.role === 'vendor'
 
   return (
-    <div className="h-screen flex flex-col bg-[#08090e] overflow-hidden">
+    <div className="min-h-screen flex flex-col">
       <AlertBanner alerts={activeAlerts} />
 
       {/* Header */}
-      <header className="shrink-0 h-11 flex items-center justify-between px-4 border-b border-white/5">
-        <div className="flex items-center gap-2.5">
-          <button onClick={() => navigate('/')} className="text-slate-600 hover:text-slate-300 transition-colors p-1 rounded hover:bg-white/5">
-            <ChevronLeft size={15} />
-          </button>
-          <div className="w-6 h-6 rounded-md bg-emerald-600 flex items-center justify-center">
-            <Leaf size={11} className="text-white" />
+      <header className="sticky top-0 z-30 glass border-b border-white/[0.06]">
+        <div className="max-w-[1600px] mx-auto h-16 px-5 sm:px-7 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => navigate('/')}
+              className="shrink-0 p-2 rounded-md text-slate-500 hover:text-slate-100 hover:bg-white/[0.05] transition-colors"
+              aria-label="Back to home"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <Logo size="md" subtle showText={false} />
+            <div className="hidden sm:flex items-center gap-2.5 min-w-0">
+              <span className="text-sm font-semibold text-slate-100">Console</span>
+              <span className="w-px h-4 bg-white/10" />
+              <Badge color={isVendor ? 'amber' : 'purple'} dot size="md">
+                {user.role.replace(/_/g, ' ')}
+              </Badge>
+              {activeAlerts.length > 0 && (
+                <Badge color="red" dot pulse size="md">
+                  {activeAlerts.length} alert{activeAlerts.length > 1 ? 's' : ''}
+                </Badge>
+              )}
+            </div>
           </div>
-          <span className="text-sm font-semibold text-slate-200 tracking-tight hidden sm:block">Resilient Food</span>
-          <Badge color={isVendor ? 'amber' : 'purple'}>{user.role.replace(/_/g, ' ')}</Badge>
-          {activeAlerts.length > 0 && (
-            <span className="flex items-center gap-1 text-[11px] text-red-400 bg-red-950/40 border border-red-800/40 px-2 py-0.5 rounded-full">
-              <AlertTriangle size={10} className="animate-pulse" />{activeAlerts.length} alert
-            </span>
-          )}
+
+          <div className="flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3 text-xs text-slate-400 tnum mr-1 px-2">
+              <span><span className="text-slate-100 font-semibold">{vendors.length}</span> vendors</span>
+              <span className="w-px h-3.5 bg-white/[0.08]" />
+              <span><span className="text-slate-100 font-semibold">{farmers.length}</span> farmers</span>
+            </div>
+            <CountrySelect value={country} onChange={setCountry} compact />
+            <div className="hidden md:flex items-center gap-2.5 pl-3 border-l border-white/[0.06]">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center text-xs font-bold text-slate-950">
+                {user.name?.[0]?.toUpperCase() || 'U'}
+              </div>
+              <span className="text-sm text-slate-200 max-w-[140px] truncate">{user.name}</span>
+            </div>
+            <button
+              onClick={() => { logout(); navigate('/') }}
+              className="shrink-0 p-2 rounded-md text-slate-500 hover:text-slate-100 hover:bg-white/[0.05] transition-colors"
+              aria-label="Sign out"
+              title="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="hidden md:flex items-center gap-3 text-[11px] text-slate-600 mr-1">
-            <span>{vendors.length} vendors</span>
-            <span>{farmers.length} farmers</span>
-          </span>
-          <select
-            value={country}
-            onChange={e => setCountry(e.target.value)}
-            className="text-xs bg-white/4 border border-white/8 text-slate-300 rounded-md px-2 py-1 focus:outline-none focus:border-emerald-600 cursor-pointer"
-          >
-            <option value="hti">🇭🇹 Haiti</option>
-            <option value="cod">🇨🇩 DRC</option>
-          </select>
-          <span className="text-xs text-slate-600 hidden sm:block">{user.name}</span>
-          <button
-            onClick={() => { logout(); navigate('/') }}
-            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/5 transition-all"
-            title="Sign out"
-          >
-            <LogOut size={14} />
-          </button>
+        {/* Phase tabs */}
+        <div className="max-w-[1600px] mx-auto px-5 sm:px-7 pb-4 pt-1">
+          <SegmentedTabs
+            value={tab}
+            onChange={setTab}
+            size="md"
+            options={[
+              { value: 'before', label: 'Before Disaster', icon: Sun,            activeIconClass: 'text-blue-400' },
+              { value: 'after',  label: 'After Disaster',  icon: CloudLightning, activeIconClass: 'text-amber-400', badge: activeAlerts.length || undefined },
+            ]}
+          />
         </div>
       </header>
 
-      {/* Tab bar */}
-      <div className="shrink-0 flex gap-0 border-b border-white/5">
-        {[
-          { id: 'before', label: 'Before Disaster', icon: Sun,           active: 'border-blue-500 text-blue-400' },
-          { id: 'after',  label: 'After Disaster',  icon: CloudLightning, active: 'border-amber-500 text-amber-400' },
-        ].map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-medium border-b-2 transition-all ${
-              tab === t.id ? t.active : 'border-transparent text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            <t.icon size={13} />{t.label}
-          </button>
-        ))}
-      </div>
-
       {/* Body */}
-      <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-44 shrink-0 border-r border-white/5 flex flex-col pt-3 pb-4 px-2 overflow-y-auto hidden md:flex">
-          <p className="text-[9px] font-semibold text-slate-600 uppercase tracking-widest px-2 mb-2">
+      <div className="flex-1 min-h-0 flex max-w-[1600px] w-full mx-auto">
+        {/* Desktop sidebar */}
+        <aside className="hidden md:flex w-64 shrink-0 border-r border-white/[0.06] flex-col py-7 px-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 px-3 mb-3.5">
             {tab === 'before' ? 'Preparedness' : 'Crisis Response'}
           </p>
-          {sections.map(s => {
-            const active = section === s.id
-            return (
-              <button
-                key={s.id}
-                onClick={() => setSection(s.id)}
-                className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all mb-0.5 ${
-                  active
-                    ? 'bg-white/8 text-slate-100'
-                    : 'text-slate-500 hover:bg-white/4 hover:text-slate-300'
-                }`}
-              >
-                {active && <span className="w-1 h-1 rounded-full bg-emerald-400 shrink-0" />}
-                <s.icon size={13} className={active ? 'text-emerald-400' : 'text-slate-600'} />
-                <span className="text-xs font-medium truncate">{s.label}</span>
-              </button>
-            )
-          })}
+          <nav className="flex flex-col gap-1">
+            {sections.map(s => {
+              const active = section === s.id
+              const Icon = s.icon
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setSection(s.id)}
+                  className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 ${
+                    active
+                      ? 'bg-white/[0.06] text-slate-100'
+                      : 'text-slate-400 hover:bg-white/[0.03] hover:text-slate-100'
+                  }`}
+                >
+                  {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] rounded-r-full bg-emerald-400" />}
+                  <Icon size={16} className={active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'} />
+                  <span className="text-sm font-medium truncate flex-1">{s.label}</span>
+                  {s.id === 'signals' && activeAlerts.length > 0 && (
+                    <Badge color="red" size="sm">{activeAlerts.length}</Badge>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
         </aside>
 
-        {/* Mobile nav */}
-        <div className="md:hidden shrink-0 border-b border-white/5 px-4 py-2">
-          <select
-            value={section}
-            onChange={e => setSection(e.target.value)}
-            className="w-full text-xs bg-white/4 border border-white/8 text-slate-300 rounded-md px-3 py-1.5 focus:outline-none"
-          >
-            {sections.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-          </select>
-        </div>
-
-        {/* Main */}
-        <main className="flex-1 min-w-0 overflow-y-auto p-5">
-          {/* Section header */}
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-0.5">
-              <current.icon size={14} className="text-emerald-400" />
-              <h2 className="text-sm font-semibold text-slate-100">{current.label}</h2>
-            </div>
-            <p className="text-xs text-slate-600">{current.desc}</p>
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Mobile pills */}
+          <div className="md:hidden border-b border-white/[0.06] px-5 py-3.5">
+            <PillTabs
+              value={section}
+              onChange={setSection}
+              options={sections.map(s => ({ value: s.id, label: s.label, icon: s.icon }))}
+            />
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${tab}-${section}`}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.15 }}
-            >
-              {tab === 'before' && section === 'map' && (
-                <div className="rounded-xl overflow-hidden border border-white/6" style={{ height: 520 }}>
-                  <ResilientMap country={country} vendors={vendors} farmers={farmers} hotspots={hotspots} />
-                </div>
-              )}
+          {/* Main */}
+          <main className="flex-1 min-w-0 overflow-y-auto p-6 sm:p-8">
+            <SectionHeader
+              icon={current.icon}
+              title={current.label}
+              description={current.description}
+              accent={current.accent}
+            />
 
-              {tab === 'before' && section === 'vendors' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  <VendorRegistration country={country} onRegistered={() => setTick(t => t + 1)} />
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Store size={12} className="text-amber-400" />
-                        Active Vendors
-                        <span className="ml-auto text-[10px] text-slate-600 font-normal">{vendors.length} total</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="divide-y divide-white/5 max-h-96 overflow-y-auto">
-                        {vendors.map((v, i) => (
-                          <div key={i} className="flex items-center justify-between px-4 py-2.5">
-                            <div className="min-w-0">
-                              <p className="text-xs font-medium text-slate-200 truncate">{v.name}</p>
-                              <p className="text-[10px] text-slate-500 truncate">{v.foodTypes?.join(', ')} · {v.dailyCapacityKg} kg/day</p>
-                            </div>
-                            <div className="flex gap-1 ml-2 shrink-0">
-                              {v.crisisActive && <Badge color="red">Crisis</Badge>}
-                              {v.verified && <Badge color="green">✓</Badge>}
-                            </div>
-                          </div>
-                        ))}
-                        {!vendors.length && (
-                          <div className="text-center py-10 text-xs text-slate-600">No vendors yet</div>
-                        )}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${tab}-${section}`}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {tab === 'before' && section === 'map' && (
+                  <div className="rounded-xl overflow-hidden border border-white/[0.08] bg-[#0a0d14] shadow-[0_20px_60px_-20px_rgba(0,0,0,0.5)]"
+                       style={{ height: 'min(720px, calc(100vh - 260px))', minHeight: 520 }}>
+                    <ResilientMap country={country} vendors={vendors} farmers={farmers} hotspots={hotspots} />
+                  </div>
+                )}
+
+                {tab === 'before' && section === 'vendors' && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <VendorRegistration country={country} onRegistered={() => setTick(t => t + 1)} />
+                    <Card>
+                      <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-white/[0.06]">
+                        <div className="flex items-center gap-2">
+                          <Store size={13} className="text-amber-400" />
+                          <span className="text-[13px] font-semibold text-slate-100">Active Vendors</span>
+                        </div>
+                        <Badge size="sm">{vendors.length} total</Badge>
                       </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+                      <CardContent className="p-0">
+                        <div className="max-h-[500px] overflow-y-auto divide-y divide-white/[0.05]">
+                          {vendors.map((v, i) => (
+                            <div key={i} className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.02] transition-colors">
+                              <div className="min-w-0">
+                                <p className="text-[13px] font-medium text-slate-100 truncate">{v.name}</p>
+                                <p className="text-[11px] text-slate-500 truncate">
+                                  {v.foodTypes?.join(', ') || '—'} · <span className="tnum">{v.dailyCapacityKg}</span> kg/day
+                                </p>
+                              </div>
+                              <div className="flex gap-1 ml-2 shrink-0">
+                                {v.crisisActive && <Badge color="red" dot pulse size="sm">Crisis</Badge>}
+                                {v.verified && <Badge color="green" size="sm">Verified</Badge>}
+                              </div>
+                            </div>
+                          ))}
+                          {!vendors.length && (
+                            <EmptyState icon={Store} title="No vendors yet" description="Register the first vendor to get started." compact />
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
-              {tab === 'before' && section === 'farmers' && (
-                <FarmerEnrollment country={country} onEnrolled={() => setTick(t => t + 1)} />
-              )}
+                {tab === 'before' && section === 'farmers' && (
+                  <FarmerEnrollment country={country} onEnrolled={() => setTick(t => t + 1)} />
+                )}
 
-              {tab === 'before' && section === 'hotspots' && (
-                <div className="rounded-xl overflow-hidden border border-white/6" style={{ height: 520 }}>
-                  <ResilientMap country={country} hotspots={hotspots} />
-                </div>
-              )}
+                {tab === 'before' && section === 'hotspots' && (
+                  <div className="rounded-xl overflow-hidden border border-white/[0.08] bg-[#0a0d14] shadow-[0_20px_60px_-20px_rgba(0,0,0,0.5)]"
+                       style={{ height: 'min(720px, calc(100vh - 260px))', minHeight: 520 }}>
+                    <ResilientMap country={country} hotspots={hotspots} />
+                  </div>
+                )}
 
-              {tab === 'before' && section === 'signals' && (
-                <DisasterSignals country={country} onActivation={setActiveAlerts} />
-              )}
+                {tab === 'before' && section === 'signals' && (
+                  <DisasterSignals country={country} onActivation={setActiveAlerts} />
+                )}
 
-              {tab === 'after' && section === 'tickets' && (
-                <TicketManager country={country} />
-              )}
+                {tab === 'after' && section === 'tickets' && (
+                  <TicketManager country={country} />
+                )}
 
-              {tab === 'after' && section === 'pulse' && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MessageSquare size={12} className="text-blue-400" />
-                      Live Market Pulse
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <MarketPulse country={country} />
-                  </CardContent>
-                </Card>
-              )}
+                {tab === 'after' && section === 'pulse' && (
+                  <MarketPulse country={country} />
+                )}
 
-              {tab === 'after' && section === 'routing' && (
-                <SupplyRouting country={country} />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+                {tab === 'after' && section === 'routing' && (
+                  <SupplyRouting country={country} />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </div>
       </div>
     </div>
   )

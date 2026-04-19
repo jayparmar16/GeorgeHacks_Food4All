@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Navigation, Zap, MapPin, Loader } from 'lucide-react'
+import { Navigation, Sparkles, Loader, MapPin, Flag } from 'lucide-react'
 import { routingAPI } from '../../lib/api'
 import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
@@ -11,25 +11,25 @@ import toast from 'react-hot-toast'
 const PRESET_DEPOTS = {
   hti: [
     { label: 'Port-au-Prince WFP Hub', lon: -72.338, lat: 18.543 },
-    { label: 'Les Cayes Depot', lon: -73.754, lat: 18.198 },
-    { label: 'Cap-Haïtien Store', lon: -72.200, lat: 19.757 },
+    { label: 'Les Cayes Depot',         lon: -73.754, lat: 18.198 },
+    { label: 'Cap-Haïtien Store',       lon: -72.200, lat: 19.757 },
   ],
   cod: [
     { label: 'Kinshasa WFP Depot', lon: 15.322, lat: -4.322 },
-    { label: 'Goma Hub', lon: 29.231, lat: -1.679 },
+    { label: 'Goma Hub',            lon: 29.231, lat: -1.679 },
   ],
 }
 
 const PRESET_DESTINATIONS = {
   hti: [
-    { label: 'Jérémie', lon: -74.117, lat: 18.648 },
-    { label: 'Corail', lon: -73.889, lat: 18.562 },
-    { label: 'Pestel', lon: -74.038, lat: 18.580 },
-    { label: 'Gonaïves', lon: -72.686, lat: 19.447 },
+    { label: 'Jérémie',   lon: -74.117, lat: 18.648 },
+    { label: 'Corail',    lon: -73.889, lat: 18.562 },
+    { label: 'Pestel',    lon: -74.038, lat: 18.580 },
+    { label: 'Gonaïves',  lon: -72.686, lat: 19.447 },
   ],
   cod: [
     { label: 'Bukavu', lon: 28.845, lat: -2.508 },
-    { label: 'Beni', lon: 29.473, lat: 0.486 },
+    { label: 'Beni',   lon: 29.473, lat: 0.486 },
   ],
 }
 
@@ -51,7 +51,7 @@ export default function SupplyRouting({ country = 'hti' }) {
   }, [country])
 
   const selectDepot = (d) => { setSourceLon(d.lon); setSourceLat(d.lat); setSourceLabel(d.label) }
-  const selectDest = (d) => { setDestLon(d.lon); setDestLat(d.lat); setDestLabel(d.label) }
+  const selectDest  = (d) => { setDestLon(d.lon);   setDestLat(d.lat);   setDestLabel(d.label) }
 
   const computeRoute = async () => {
     if (!sourceLon || !sourceLat || !destLon || !destLat) {
@@ -62,7 +62,7 @@ export default function SupplyRouting({ country = 'hti' }) {
     try {
       const { data } = await routingAPI.route({
         sourceLon: parseFloat(sourceLon), sourceLat: parseFloat(sourceLat),
-        destLon: parseFloat(destLon), destLat: parseFloat(destLat),
+        destLon:   parseFloat(destLon),   destLat:   parseFloat(destLat),
         sourceLabel, destLabel, country,
       })
       setResult(data)
@@ -71,30 +71,38 @@ export default function SupplyRouting({ country = 'hti' }) {
     } finally { setLoading(false) }
   }
 
-  const depots = PRESET_DEPOTS[country] || []
+  const depots       = PRESET_DEPOTS[country] || []
   const destinations = PRESET_DESTINATIONS[country] || []
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,360px)_1fr] gap-5">
         {/* Controls */}
-        <Card className="lg:col-span-1">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Navigation size={15} className="text-amber-400" />
+            <CardTitle>
+              <Navigation size={13} className="text-amber-400" />
               Route Planner
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {/* Source */}
             <div>
-              <label className="text-xs text-slate-400 mb-2 block">Source Depot</label>
+              <label className="text-[11px] font-medium text-slate-400 mb-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Source depot
+              </label>
               <div className="flex flex-wrap gap-1 mb-2">
                 {depots.map(d => (
-                  <button key={d.label} onClick={() => selectDepot(d)}
-                    className={`px-2 py-1 rounded-full text-xs border transition-all ${
-                      sourceLabel === d.label ? 'border-emerald-500 bg-emerald-900/40 text-emerald-400' : 'border-slate-600 text-slate-400'
-                    }`}>
+                  <button
+                    key={d.label}
+                    onClick={() => selectDepot(d)}
+                    className={`px-2.5 h-7 rounded-full text-[11px] font-medium border transition-all ${
+                      sourceLabel === d.label
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200'
+                        : 'border-white/[0.08] bg-white/[0.02] text-slate-400 hover:border-white/[0.16] hover:text-slate-200'
+                    }`}
+                  >
                     {d.label}
                   </button>
                 ))}
@@ -107,13 +115,21 @@ export default function SupplyRouting({ country = 'hti' }) {
 
             {/* Destination */}
             <div>
-              <label className="text-xs text-slate-400 mb-2 block">Destination</label>
+              <label className="text-[11px] font-medium text-slate-400 mb-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                Destination
+              </label>
               <div className="flex flex-wrap gap-1 mb-2">
                 {destinations.map(d => (
-                  <button key={d.label} onClick={() => selectDest(d)}
-                    className={`px-2 py-1 rounded-full text-xs border transition-all ${
-                      destLabel === d.label ? 'border-red-500 bg-red-900/40 text-red-400' : 'border-slate-600 text-slate-400'
-                    }`}>
+                  <button
+                    key={d.label}
+                    onClick={() => selectDest(d)}
+                    className={`px-2.5 h-7 rounded-full text-[11px] font-medium border transition-all ${
+                      destLabel === d.label
+                        ? 'border-red-500/50 bg-red-500/10 text-red-200'
+                        : 'border-white/[0.08] bg-white/[0.02] text-slate-400 hover:border-white/[0.16] hover:text-slate-200'
+                    }`}
+                  >
                     {d.label}
                   </button>
                 ))}
@@ -124,33 +140,35 @@ export default function SupplyRouting({ country = 'hti' }) {
               </div>
             </div>
 
-            <Button onClick={computeRoute} disabled={loading} className="w-full">
-              {loading ? <><Loader size={14} className="animate-spin" /> Computing…</> : <><Navigation size={14} /> Compute Route</>}
+            <Button onClick={computeRoute} disabled={loading} className="w-full" size="lg">
+              {loading ? <><Loader size={14} className="animate-spin" /> Computing…</> : <><Navigation size={14} /> Compute route</>}
             </Button>
 
             {result && (
-              <div className="space-y-2">
+              <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 space-y-2">
                 {result.distanceKm && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Distance</span>
-                    <Badge color="amber">{result.distanceKm} km</Badge>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500">Total distance</span>
+                    <Badge color="amber" size="md">{result.distanceKm} km</Badge>
                   </div>
                 )}
                 {result.fallback && (
-                  <p className="text-xs text-amber-400">{result.message}</p>
+                  <p className="text-[11px] text-amber-300 leading-relaxed">{result.message}</p>
                 )}
               </div>
             )}
 
-            {/* Flagged underserved places */}
             {flaggedPlaces.length > 0 && (
               <div>
-                <p className="text-xs text-slate-400 mb-2">Underserved Places ({flaggedPlaces.length})</p>
+                <p className="text-[11px] font-medium text-slate-400 mb-2 flex items-center gap-1.5">
+                  <Flag size={11} className="text-red-400" />
+                  Underserved places <span className="text-slate-600">({flaggedPlaces.length})</span>
+                </p>
                 <div className="space-y-1 max-h-40 overflow-y-auto">
                   {flaggedPlaces.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs p-1.5 rounded bg-slate-800/60">
-                      <span className="text-red-400">{p.name}</span>
-                      <span className="text-slate-500">{p.distanceToMarket} km</span>
+                    <div key={i} className="flex items-center justify-between text-[11.5px] px-2.5 py-1.5 rounded-md bg-white/[0.02] border border-white/[0.05]">
+                      <span className="text-red-300 truncate">{p.name}</span>
+                      <span className="text-slate-500 tnum shrink-0 ml-2">{p.distanceToMarket} km</span>
                     </div>
                   ))}
                 </div>
@@ -160,7 +178,7 @@ export default function SupplyRouting({ country = 'hti' }) {
         </Card>
 
         {/* Map */}
-        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ minHeight: 400 }}>
+        <div className="rounded-xl overflow-hidden border border-white/[0.08] bg-[#0a0d14]" style={{ minHeight: 440 }}>
           <ResilientMap
             country={country}
             markets={markets}
@@ -174,12 +192,14 @@ export default function SupplyRouting({ country = 'hti' }) {
 
       {/* Gemini narrative */}
       {result?.narrative && (
-        <div className="p-4 rounded-xl bg-blue-900/20 border border-blue-700/40">
+        <div className="p-4 rounded-xl bg-blue-500/[0.06] border border-blue-500/25">
           <div className="flex items-center gap-2 mb-2">
-            <Zap size={14} className="text-blue-400" />
-            <span className="text-sm font-medium text-blue-400">Gemini Routing Narrative</span>
+            <Sparkles size={13} className="text-blue-400" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-200">
+              Gemini routing narrative
+            </span>
           </div>
-          <p className="text-sm text-slate-200 leading-relaxed">{result.narrative}</p>
+          <p className="text-[13px] text-slate-200 leading-relaxed">{result.narrative}</p>
         </div>
       )}
     </div>

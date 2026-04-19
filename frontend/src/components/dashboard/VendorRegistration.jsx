@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Store, MapPin, CheckCircle } from 'lucide-react'
+import { Store, CheckCircle, Truck, Phone } from 'lucide-react'
 import { vendorAPI } from '../../lib/api'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/Card'
 import { Input, Select, Textarea } from '../ui/Input'
 import { Button } from '../ui/Button'
 import toast from 'react-hot-toast'
@@ -49,12 +48,16 @@ export default function VendorRegistration({ country = 'hti', onRegistered }) {
   if (done && result) {
     return (
       <Card>
-        <CardContent className="py-8 text-center">
-          <CheckCircle size={40} className="text-emerald-400 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-slate-100 mb-1">Welcome to RootNet!</h3>
-          <p className="text-sm text-slate-400 mb-4">{result.name} is now registered as a distribution node.</p>
+        <CardContent className="py-12 text-center">
+          <div className="mx-auto w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 grid place-items-center mb-4">
+            <CheckCircle size={26} className="text-emerald-400" />
+          </div>
+          <h3 className="text-base font-semibold text-slate-100 mb-1">Welcome to RootNet</h3>
+          <p className="text-sm text-slate-500 mb-5">
+            <span className="text-slate-300 font-medium">{result.name}</span> is now a distribution node.
+          </p>
           <Button variant="outline" onClick={() => { setDone(false); setForm({ ...form, name: '', phone: '' }) }}>
-            Register Another
+            Register another
           </Button>
         </CardContent>
       </Card>
@@ -64,11 +67,11 @@ export default function VendorRegistration({ country = 'hti', onRegistered }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Store size={16} className="text-emerald-400" />
+        <CardTitle>
+          <Store size={13} className="text-amber-400" />
           RootNet Vendor Registration
         </CardTitle>
-        <p className="text-xs text-slate-400 mt-1">Map yourself as a crisis-ready food distribution node</p>
+        <CardDescription>Map yourself as a crisis-ready food distribution node.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -85,23 +88,30 @@ export default function VendorRegistration({ country = 'hti', onRegistered }) {
           </div>
 
           <div>
-            <label className="text-sm text-slate-400 mb-2 block">Food Types Sold</label>
+            <label className="text-[11px] font-medium text-slate-400 mb-2 block">Food types sold</label>
             <div className="flex flex-wrap gap-1.5">
-              {FOOD_TYPES.map(type => (
-                <button key={type} type="button" onClick={() => toggleFood(type)}
-                  className={`px-2.5 py-1 rounded-full text-xs border transition-all ${
-                    form.foodTypes.includes(type)
-                      ? 'border-emerald-500 bg-emerald-900/40 text-emerald-400'
-                      : 'border-slate-600 text-slate-400 hover:border-slate-500'
-                  }`}>
-                  {type}
-                </button>
-              ))}
+              {FOOD_TYPES.map(type => {
+                const active = form.foodTypes.includes(type)
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => toggleFood(type)}
+                    className={`px-3 h-7 rounded-full text-[11px] font-medium border transition-all ${
+                      active
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200'
+                        : 'border-white/[0.08] bg-white/[0.02] text-slate-400 hover:border-white/[0.16] hover:text-slate-200'
+                    }`}
+                  >
+                    {type}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Phone / Contact" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+509..." />
+            <Input label="Phone / Contact" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+509…" leftIcon={<Phone size={12} />} />
             <Select label="Contact Method" value={form.contactMethod} onChange={e => set('contactMethod', e.target.value)}>
               <option value="sms">SMS</option>
               <option value="whatsapp">WhatsApp</option>
@@ -111,20 +121,30 @@ export default function VendorRegistration({ country = 'hti', onRegistered }) {
 
           <div className="grid grid-cols-2 gap-3">
             <Input label="Storage Capacity (kg)" value={form.storageCapacityKg} onChange={e => set('storageCapacityKg', e.target.value)} type="number" min="0" />
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-slate-400">Has Transport?</label>
-              <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                <input type="checkbox" checked={form.hasTransport} onChange={e => set('hasTransport', e.target.checked)} />
-                <span className="text-sm text-slate-300">Yes, I have transport</span>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-medium text-slate-400">Transport</label>
+              <label className="flex items-center gap-2 h-9 px-3 rounded-lg bg-[#0c0e14] border border-white/10 cursor-pointer hover:border-white/15 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={form.hasTransport}
+                  onChange={e => set('hasTransport', e.target.checked)}
+                  className="accent-emerald-500"
+                />
+                <Truck size={12} className="text-slate-500" />
+                <span className="text-[13px] text-slate-300">I have transport</span>
               </label>
             </div>
           </div>
 
-          <Textarea label="Cultural Food Knowledge & Notes" rows={3}
+          <Textarea
+            label="Cultural food knowledge & notes"
+            rows={3}
             placeholder="What does your community actually eat? Any special items, seasons, preferences…"
-            value={form.culturalNotes} onChange={e => set('culturalNotes', e.target.value)} />
+            value={form.culturalNotes}
+            onChange={e => set('culturalNotes', e.target.value)}
+          />
 
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button type="submit" disabled={loading} className="w-full" size="lg">
             {loading ? 'Registering…' : 'Register as RootNet Vendor'}
           </Button>
         </form>
